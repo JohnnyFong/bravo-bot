@@ -38,7 +38,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			var rs []binance.PositionRisk
 			err := json.Unmarshal(data, &rs)
 			if err != nil {
-				fmt.Printf("Failed to transform listenKey: %s\n", err)
+				fmt.Printf("Failed to transform positionRisk: %s\n", err)
 				discord.SendMessage("No position", os.Getenv("BOT_CHANNEL"))
 			} else {
 				f := []*discordgo.MessageEmbedField{}
@@ -104,5 +104,68 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if m.Content == "!pnl" && m.ChannelID == os.Getenv("CMD_CHANNEL") {
 		Pnl = !Pnl
 		discord.SendMessage("PNL mode - "+strconv.FormatBool(Pnl), os.Getenv("CMD_CHANNEL"))
+	}
+
+	if m.Content == "!order" && m.ChannelID == os.Getenv("BOT_CHANNEL") {
+		response, err := binance.GetOpenOrder(os.Getenv("API_KEY"))
+		if err != nil {
+			fmt.Printf("Failed to get openOrder: %s\n", err)
+			discord.SendMessage("No position", os.Getenv("BOT_CHANNEL"))
+		} else {
+			data, _ := ioutil.ReadAll(response.Body)
+			var rs []binance.OpenOrder
+			err := json.Unmarshal(data, &rs)
+			if err != nil {
+				fmt.Printf("Failed to transform openOrder: %s\n", err)
+				discord.SendMessage("No open order", os.Getenv("BOT_CHANNEL"))
+			} else {
+				f := []*discordgo.MessageEmbedField{}
+				for _, ps := range rs {
+					f = append(f, []*discordgo.MessageEmbedField{
+						{
+							Name:  "\u200B",
+							Value: "\u200B",
+						},
+						{
+							Name:   "Symbol",
+							Value:  ps.Symbol,
+							Inline: true,
+						},
+						{
+							Name:   "Type",
+							Value:  ps.Type,
+							Inline: true,
+						},
+						{
+							Name:   "Position Side",
+							Value:  ps.Side,
+							Inline: true,
+						},
+						{
+							Name:   "Entry Price",
+							Value:  ps.Price,
+							Inline: true,
+						},
+						{
+							Name:   "Stop Price",
+							Value:  ps.StopPrice,
+							Inline: true,
+						},
+					}...)
+				}
+
+				if len(f) > 0 {
+					embed := discordgo.MessageEmbed{
+						Type:   discordgo.EmbedTypeRich,
+						Title:  "Current Positions",
+						Color:  0x0099FF,
+						Fields: f,
+					}
+					discord.SendEmbedMessage(&embed, os.Getenv("BOT_CHANNEL"))
+				} else {
+					discord.SendMessage("No open order", os.Getenv("BOT_CHANNEL"))
+				}
+			}
+		}
 	}
 }
