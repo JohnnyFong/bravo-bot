@@ -157,7 +157,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				if len(f) > 0 {
 					embed := discordgo.MessageEmbed{
 						Type:   discordgo.EmbedTypeRich,
-						Title:  "Current Positions",
+						Title:  "Current Open Orders",
 						Color:  0x0099FF,
 						Fields: f,
 					}
