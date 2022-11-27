@@ -1,15 +1,13 @@
 package binance
 
 import (
-	"crypto/hmac"
-	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
-	"strconv"
-	"time"
+
+	"github.com/bravo-bot/pkg/binance/utils"
 )
 
 type ListenKeyRes struct {
@@ -55,16 +53,14 @@ func GetListenKey(apiKey string) string {
 }
 
 func GetPositionRisk(apiKey string) (*http.Response, error) {
-	t := time.Now().UnixNano() / int64(time.Millisecond)
-	query := "recvWindow=60000&timestamp=" + strconv.FormatInt(t, 10)
-	key := []byte(os.Getenv("SECERT_KEY"))
-
-	sig := hmac.New(sha256.New, key)
-	sig.Write([]byte(query))
-
+	query := "recWindow=60000"
+	q := utils.ApiQuery(query, os.Getenv("SECRET_KEY"))
 	client := &http.Client{}
-	req, _ := http.NewRequest("GET", os.Getenv("BASE_URL")+"/fapi/v1/positionRisk?recvWindow=60000&timestamp="+strconv.FormatInt(t, 10)+"&signature="+fmt.Sprintf("%x", (sig.Sum(nil))), nil)
+	req, _ := http.NewRequest("GET", os.Getenv("BASE_URL")+"/fapi/v1/positionRisk?"+q, nil)
 	req.Header.Set("X-MBX-APIKEY", apiKey)
-
 	return client.Do(req)
 }
+
+// func GetOpenOrder(apiKey string) (*http.Response, error) {
+
+// }
